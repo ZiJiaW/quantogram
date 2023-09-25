@@ -1,53 +1,47 @@
 use pyo3::prelude::*;
 
-use ::quantogram as qg;
+use zw_fast_quantile::UnboundEpsilonSummary;
 
-#[pyclass(name = "Quantogram")]
-struct PyQuantogram {
-    qg: qg::Quantogram,
+#[pyclass(name = "UnboundQuantileSummary")]
+struct UnboundQuantileSummary {
+    qg: UnboundEpsilonSummary<i64>,
 }
 
 #[pymethods]
-impl PyQuantogram {
+impl UnboundQuantileSummary {
     #[new]
-    fn new() -> Self {
-        PyQuantogram {
-            qg: qg::Quantogram::new(),
+    fn new(epsilon: f64) -> Self {
+        UnboundQuantileSummary {
+            qg: UnboundEpsilonSummary::new(epsilon),
         }
     }
 
-    fn add(&mut self, sample: f64) {
-        self.qg.add(sample);
+    fn update(&mut self, sample: i64) {
+        self.qg.update(sample);
     }
 
-    fn remove(&mut self, sample: f64) {
-        self.qg.remove(sample);
+    fn query(&mut self, quantile: f64) -> i64 {
+        self.qg.query(quantile)
     }
 
-    fn add_weighted(&mut self, sample: f64, weight: f64) {
-        self.qg.add_weighted(sample, weight);
+    fn batch_update(&mut self, samples: Vec<i64>) {
+        for sample in samples {
+            self.qg.update(sample);
+        }
     }
 
-    fn add_unweighted_samples(&mut self, samples: Vec<f64>) {
-        self.qg.add_unweighted_samples(samples.iter());
+    fn batch_query(&mut self, samples: Vec<f64>) -> Vec<i64> {
+        samples.iter().map(|&q| self.qg.query(q)).collect()
     }
 
-    fn quantile(&self, quantile: f64) -> Option<f64> {
-        self.qg.quantile(quantile)
-    }
-
-    fn fussy_quantile(&self, quantile: f64, threshold_ratio: f64) -> Option<f64> {
-        self.qg.fussy_quantile(quantile, threshold_ratio)
-    }
-
-    fn count(&self) -> usize {
-        self.qg.count()
+    fn size(&self) -> usize {
+        self.qg.size()
     }
 }
 
 /// A Python module implemented in Rust.
 #[pymodule]
 fn quantogram(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_class::<PyQuantogram>()?;
+    m.add_class::<UnboundQuantileSummary>()?;
     Ok(())
 }

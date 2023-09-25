@@ -1,3 +1,3 @@
 # Introduction
 
-Wraps https://github.com/paulchernoch/quantogram for use in python.
+Wraps zw_fast_quantile for use in python.
